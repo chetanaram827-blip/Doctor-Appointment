@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Edit Appointment</title>
+</head>
+
+<body>
+
+    <h1>Edit Appointment</h1>
+
+    <form id="editForm">
+
+        <label>Patient Name:</label>
+        <input type="text" id="patientName" required>
+        <br><br>
+
+        <label>Doctor Name:</label>
+        <input type="text" id="doctorName" required>
+        <br><br>
+
+        <label>Date:</label>
+        <input type="text" id="date" required>
+        <br><br>
+
+        <label>Time:</label>
+        <input type="text" id="time" required>
+        <br><br>
+
+        <label>Reason:</label>
+        <input type="text" id="reason" required>
+        <br><br>
+
+        <button type="submit">Update Appointment</button>
+
+    </form>
+
+
+    <script>
+
+        // Get appointment ID from URL
+        const params = new URLSearchParams(window.location.search);
+
+        const id = params.get("id");
+
+
+        // Load appointment details
+        async function loadAppointment() {
+
+            try {
+
+                const response = await fetch("/appointments");
+
+                const appointments = await response.json();
+
+
+                // Find selected appointment
+                const appointment = appointments.find(
+                    item => String(item._id) === String(id)
+                );
+
+
+                // If appointment not found
+                if (!appointment) {
+
+                    alert("Appointment not found");
+
+                    return;
+
+                }
+
+
+                // Show existing details
+                document.getElementById("patientName").value =
+                    appointment.patientName;
+
+                document.getElementById("doctorName").value =
+                    appointment.doctorName;
+
+                document.getElementById("date").value =
+                    appointment.date;
+
+                document.getElementById("time").value =
+                    appointment.time;
+
+                document.getElementById("reason").value =
+                    appointment.reason;
+
+            } catch (error) {
+
+                console.log(error);
+
+                alert("Failed to load appointment");
+
+            }
+
+        }
+
+
+        // Load appointment when page opens
+        loadAppointment();
+
+
+        // Update appointment
+        document.getElementById("editForm").addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const updatedAppointment = {
+
+                    patientName:
+                        document.getElementById("patientName").value,
+
+                    doctorName:
+                        document.getElementById("doctorName").value,
+
+                    date:
+                        document.getElementById("date").value,
+
+                    time:
+                        document.getElementById("time").value,
+
+                    reason:
+                        document.getElementById("reason").value
+
+                };
+
+
+                try {
+
+                    const response = await fetch(
+                        `/appointments/${id}`,
+                        {
+                            method: "PUT",
+
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+
+                            body: JSON.stringify(updatedAppointment)
+                        }
+                    );
+
+
+                    const data = await response.json();
+
+
+                    alert(data.message);
+
+
+                    // Go back to appointments page
+                    if (response.ok) {
+
+                        window.location.href =
+                            "/appointments.html";
+
+                    }
+
+                } catch (error) {
+
+                    console.log(error);
+
+                    alert("Failed to update appointment");
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
