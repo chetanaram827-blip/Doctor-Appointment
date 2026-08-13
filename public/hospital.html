@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hospital Search</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h1>Hospital Search</h1>
+
+    <input type="text" id="city" placeholder="Enter City">
+
+    <input type="text" id="area" placeholder="Enter Area">
+
+    <button onclick="searchHospitals()">Search</button>
+
+    <div id="hospitalList"></div>
+
+    <script>
+        async function searchHospitals() {
+
+            const city = document.getElementById("city").value.trim();
+            const area = document.getElementById("area").value.trim();
+
+            const params = new URLSearchParams();
+
+            if (city) {
+                params.append("city", city);
+            }
+
+            if (area) {
+                params.append("area", area);
+            }
+
+            const url = "/hospitals/search?" + params.toString();
+
+            try {
+
+                const response = await fetch(url);
+
+                const hospitals = await response.json();
+
+                const list = document.getElementById("hospitalList");
+
+                if (hospitals.length === 0) {
+                    list.innerHTML = "<p>No hospitals found.</p>";
+                    return;
+                }
+
+                list.innerHTML = hospitals.map(hospital => `
+                    <div>
+                        <h2>${hospital.name}</h2>
+
+                        <p>
+                            <strong>Area:</strong>
+                            ${hospital.area}
+                        </p>
+
+                        <p>
+                            <strong>City:</strong>
+                            ${hospital.city}
+                        </p>
+
+                        <p>
+                            <strong>Address:</strong>
+                            ${hospital.address}
+                        </p>
+
+                        <p>
+                            <strong>Phone:</strong>
+                            ${hospital.phone}
+                        </p>
+                    </div>
+
+                    <hr>
+                `).join("");
+
+            } catch (error) {
+
+                console.error(error);
+
+                document.getElementById("hospitalList").innerHTML =
+                    "<p>Failed to load hospitals.</p>";
+            }
+        }
+    </script>
+
+</body>
+</html>

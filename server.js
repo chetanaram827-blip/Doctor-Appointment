@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const Appointment = require("./models/Appointment");
+const hospitalRoutes = require("./routes/hospitalRoutes");
 
 const app = express();
 
@@ -12,6 +13,13 @@ const app = express();
 
 app.use(express.json());
 app.use(express.static("public"));
+
+// ===============================
+// Routes
+// ===============================
+
+// Hospital Routes
+app.use("/hospitals", hospitalRoutes);
 
 // ===============================
 // POST API - Book Appointment
@@ -118,7 +126,8 @@ app.delete("/appointments/:id", async (req, res) => {
 // MongoDB Connection & Start Server
 // ===============================
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+    .connect(process.env.MONGO_URI)
     .then(() => {
         console.log("MongoDB connected successfully");
 
@@ -127,5 +136,8 @@ mongoose.connect(process.env.MONGO_URI)
         });
     })
     .catch((error) => {
-        console.log("Database connection failed:", error.message);
+        console.log(
+            "Database connection failed:",
+            error.message
+        );
     });
