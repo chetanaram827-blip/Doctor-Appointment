@@ -9,9 +9,9 @@ const hospitalSchema = new mongoose.Schema(
     },
 
     area: {
-      type: String,
-      required: true,
-      trim: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Area",
+      required: true
     },
 
     city: {

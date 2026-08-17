@@ -3,7 +3,13 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const Appointment = require("./models/Appointment");
+const TimeSlot = require("./models/TimeSlot");
+
 const hospitalRoutes = require("./routes/hospitalRoutes");
+const areaRoutes = require("./routes/areaRoutes");
+const departmentRoutes = require("./routes/department.route");
+const doctorRoutes = require("./routes/doctor.route");
+const timeslotRoutes = require("./routes/timeslot.route");
 
 const app = express();
 
@@ -18,8 +24,25 @@ app.use(express.static("public"));
 // Routes
 // ===============================
 
-// Hospital Routes
+app.use("/areas", areaRoutes);
+
 app.use("/hospitals", hospitalRoutes);
+
+app.use("/departments", departmentRoutes);
+
+app.use("/doctors", doctorRoutes);
+
+app.use("/timeslots", timeslotRoutes);
+
+// ===============================
+// Temporary Doctor Test Route
+// ===============================
+
+app.get("/test-doctor", (req, res) => {
+    res.json({
+        message: "Doctor route is connected"
+    });
+});
 
 // ===============================
 // POST API - Book Appointment
@@ -27,9 +50,52 @@ app.use("/hospitals", hospitalRoutes);
 
 app.post("/appointments", async (req, res) => {
     try {
-        const appointment = new Appointment(req.body);
 
+        const {
+            patientName,
+            doctorName,
+            doctor,
+            timeSlot,
+            date,
+            time,
+            reason
+        } = req.body;
+
+        // Check TimeSlot
+        const slot = await TimeSlot.findById(timeSlot);
+
+        if (!slot) {
+            return res.status(404).json({
+                message: "Time slot not found"
+            });
+        }
+
+        // Check if TimeSlot is already booked
+        if (slot.isBooked) {
+            return res.status(400).json({
+                message: "Time slot is already booked"
+            });
+        }
+
+        // Create Appointment
+        const appointment = new Appointment({
+            patientName,
+            doctorName,
+            doctor,
+            timeSlot,
+            date,
+            time,
+            reason
+        });
+
+        // Save Appointment
         await appointment.save();
+
+        // Mark TimeSlot as booked
+        slot.isBooked = true;
+
+        // Save TimeSlot
+        await slot.save();
 
         res.status(201).json({
             message: "Appointment booked successfully",
@@ -37,10 +103,12 @@ app.post("/appointments", async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             message: "Failed to book appointment",
             error: error.message
         });
+
     }
 });
 
@@ -50,15 +118,20 @@ app.post("/appointments", async (req, res) => {
 
 app.get("/appointments", async (req, res) => {
     try {
-        const appointments = await Appointment.find();
+
+        const appointments = await Appointment.find()
+            .populate("doctor")
+            .populate("timeSlot");
 
         res.status(200).json(appointments);
 
     } catch (error) {
+
         res.status(500).json({
             message: "Failed to get appointments",
             error: error.message
         });
+
     }
 });
 
@@ -68,6 +141,7 @@ app.get("/appointments", async (req, res) => {
 
 app.put("/appointments/:id", async (req, res) => {
     try {
+
         const appointment = await Appointment.findByIdAndUpdate(
             req.params.id,
             req.body,
@@ -86,10 +160,12 @@ app.put("/appointments/:id", async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             message: "Failed to update appointment",
             error: error.message
         });
+
     }
 });
 
@@ -99,6 +175,7 @@ app.put("/appointments/:id", async (req, res) => {
 
 app.delete("/appointments/:id", async (req, res) => {
     try {
+
         const appointment = await Appointment.findByIdAndDelete(
             req.params.id
         );
@@ -115,10 +192,12 @@ app.delete("/appointments/:id", async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             message: "Failed to delete appointment",
             error: error.message
         });
+
     }
 });
 
@@ -129,15 +208,19 @@ app.delete("/appointments/:id", async (req, res) => {
 mongoose
     .connect(process.env.MONGO_URI)
     .then(() => {
+
         console.log("MongoDB connected successfully");
 
         app.listen(5000, () => {
             console.log("Server running on port 5000");
         });
+
     })
     .catch((error) => {
+
         console.log(
             "Database connection failed:",
             error.message
         );
+
     });

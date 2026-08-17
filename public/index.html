@@ -16,16 +16,23 @@
         <input type="text" id="patientName" required>
         <br><br>
 
-        <label>Doctor Name:</label>
-        <input type="text" id="doctorName" required>
+        <label>Doctor:</label>
+        <select id="doctor" required>
+            <option value="">Select Doctor</option>
+            <option value="6a7eda9453cde71dbcfea7fa">
+                Dr. Kumar - Cardiologist
+            </option>
+        </select>
         <br><br>
 
         <label>Date:</label>
         <input type="date" id="date" required>
         <br><br>
 
-        <label>Time:</label>
-        <input type="time" id="time" required>
+        <label>Available Time Slot:</label>
+        <select id="timeSlot" required>
+            <option value="">Select Date First</option>
+        </select>
         <br><br>
 
         <label>Reason:</label>
@@ -38,45 +45,177 @@
 
     <script>
 
-        document.getElementById("appointmentForm").addEventListener("submit", async function(event) {
+        const doctorSelect = document.getElementById("doctor");
+        const dateInput = document.getElementById("date");
+        const timeSlotSelect = document.getElementById("timeSlot");
 
-            event.preventDefault();
+        // Load available time slots
+        async function loadTimeSlots() {
 
-            const appointment = {
-                patientName: document.getElementById("patientName").value,
-                doctorName: document.getElementById("doctorName").value,
-                date: document.getElementById("date").value,
-                time: document.getElementById("time").value,
-                reason: document.getElementById("reason").value
-            };
+            const doctorId = doctorSelect.value;
+            const selectedDate = dateInput.value;
+
+            if (!doctorId || !selectedDate) {
+
+                timeSlotSelect.innerHTML =
+                    '<option value="">Select Doctor and Date</option>';
+
+                return;
+            }
 
             try {
 
-                const response = await fetch("/appointments", {
-                    method: "POST",
+                const response = await fetch("/timeslots");
 
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                if (!response.ok) {
+                    throw new Error("Failed to fetch time slots");
+                }
 
-                    body: JSON.stringify(appointment)
+                const timeSlots = await response.json();
+
+                timeSlotSelect.innerHTML =
+                    '<option value="">Select Time Slot</option>';
+
+                const availableSlots = timeSlots.filter(function(slot) {
+
+                    const slotDoctorId =
+                        slot.doctor._id || slot.doctor;
+
+                    return (
+                        slotDoctorId === doctorId &&
+                        slot.date === selectedDate &&
+                        slot.isBooked === false
+                    );
+
                 });
 
-                const data = await response.json();
+                if (availableSlots.length === 0) {
 
-                alert(data.message + "\n" + (data.error || ""));
+                    timeSlotSelect.innerHTML =
+                        '<option value="">No available slots</option>';
+
+                    return;
+                }
+
+                availableSlots.forEach(function(slot) {
+
+                    const option = document.createElement("option");
+
+                    option.value = slot._id;
+
+                    option.textContent =
+                        slot.startTime + " - " + slot.endTime;
+
+                    timeSlotSelect.appendChild(option);
+
+                });
 
             } catch (error) {
 
-                alert("Something went wrong");
-
                 console.log(error);
+
+                timeSlotSelect.innerHTML =
+                    '<option value="">Failed to load slots</option>';
+
             }
 
-        });
+        }
+
+        doctorSelect.addEventListener("change", loadTimeSlots);
+
+        dateInput.addEventListener("change", loadTimeSlots);
+
+
+        // Book appointment
+        document.getElementById("appointmentForm")
+            .addEventListener("submit", async function(event) {
+
+                event.preventDefault();
+
+                const doctorId = doctorSelect.value;
+                const timeSlotId = timeSlotSelect.value;
+
+                if (!timeSlotId) {
+
+                    alert("Please select an available time slot.");
+
+                    return;
+                }
+
+                const selectedOption =
+                    timeSlotSelect.options[
+                        timeSlotSelect.selectedIndex
+                    ];
+
+                const appointment = {
+
+                    patientName:
+                        document.getElementById("patientName").value,
+
+                    doctorName:
+                        doctorSelect.options[
+                            doctorSelect.selectedIndex
+                        ].text.split(" - ")[0],
+
+                    doctor: doctorId,
+
+                    timeSlot: timeSlotId,
+
+                    date:
+                        dateInput.value,
+
+                    time:
+                        selectedOption.textContent,
+
+                    reason:
+                        document.getElementById("reason").value
+
+                };
+
+
+                try {
+
+                    const response = await fetch("/appointments", {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(appointment)
+
+                    });
+
+                    const data = await response.json();
+
+                    alert(
+                        data.message +
+                        "\n" +
+                        (data.error || "")
+                    );
+
+                    if (response.ok) {
+
+                        document.getElementById("appointmentForm")
+                            .reset();
+
+                        timeSlotSelect.innerHTML =
+                            '<option value="">Select Date First</option>';
+
+                    }
+
+                } catch (error) {
+
+                    console.log(error);
+
+                    alert("Something went wrong");
+
+                }
+
+            });
 
     </script>
 
 </body>
 </html>
-

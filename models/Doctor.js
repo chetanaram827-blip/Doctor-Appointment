@@ -1,38 +1,34 @@
 const mongoose = require("mongoose");
 
 const doctorSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
-    specialization: {
-      type: String,
-      required: true,
-      trim: true
-    },
+        department: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Department",
+            required: true
+        },
 
-    hospital: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Hospital",
-      required: true
-    },
+        specialization: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
-    availableDays: {
-      type: [String],
-      default: []
+        phone: {
+            type: String,
+            required: true,
+            trim: true
+        }
     },
-
-    availableTime: {
-      type: String,
-      default: ""
+    {
+        timestamps: true
     }
-  },
-  {
-    timestamps: true
-  }
 );
 
 module.exports = mongoose.model("Doctor", doctorSchema);
