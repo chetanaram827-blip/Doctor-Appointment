@@ -176,7 +176,8 @@ app.put("/appointments/:id", async (req, res) => {
 app.delete("/appointments/:id", async (req, res) => {
     try {
 
-        const appointment = await Appointment.findByIdAndDelete(
+        // 1. Find the appointment
+        const appointment = await Appointment.findById(
             req.params.id
         );
 
@@ -186,8 +187,25 @@ app.delete("/appointments/:id", async (req, res) => {
             });
         }
 
+        // 2. Find the TimeSlot used by this appointment
+        const slot = await TimeSlot.findById(
+            appointment.timeSlot
+        );
+
+        // 3. Make the TimeSlot available again
+        if (slot) {
+            slot.isBooked = false;
+            await slot.save();
+        }
+
+        // 4. Delete the appointment
+        await Appointment.findByIdAndDelete(
+            req.params.id
+        );
+
+        // 5. Send success response
         res.status(200).json({
-            message: "Appointment deleted successfully",
+            message: "Appointment deleted successfully and time slot is now available",
             appointment: appointment
         });
 
