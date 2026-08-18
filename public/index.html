@@ -18,10 +18,7 @@
 
         <label>Doctor:</label>
         <select id="doctor" required>
-            <option value="">Select Doctor</option>
-            <option value="6a7eda9453cde71dbcfea7fa">
-                Dr. Kumar - Cardiologist
-            </option>
+            <option value="">Loading Doctors...</option>
         </select>
         <br><br>
 
@@ -31,7 +28,7 @@
 
         <label>Available Time Slot:</label>
         <select id="timeSlot" required>
-            <option value="">Select Date First</option>
+            <option value="">Select Doctor and Date</option>
         </select>
         <br><br>
 
@@ -48,6 +45,48 @@
         const doctorSelect = document.getElementById("doctor");
         const dateInput = document.getElementById("date");
         const timeSlotSelect = document.getElementById("timeSlot");
+
+
+        // Load doctors from backend
+        async function loadDoctors() {
+
+            try {
+
+                const response = await fetch("/doctors");
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch doctors");
+                }
+
+                const doctors = await response.json();
+
+                doctorSelect.innerHTML =
+                    '<option value="">Select Doctor</option>';
+
+                doctors.forEach(function(doctor) {
+
+                    const option = document.createElement("option");
+
+                    option.value = doctor._id;
+
+                    option.textContent =
+                        doctor.name + " - " + doctor.specialization;
+
+                    doctorSelect.appendChild(option);
+
+                });
+
+            } catch (error) {
+
+                console.log(error);
+
+                doctorSelect.innerHTML =
+                    '<option value="">Failed to load doctors</option>';
+
+            }
+
+        }
+
 
         // Load available time slots
         async function loadTimeSlots() {
@@ -89,6 +128,7 @@
 
                 });
 
+
                 if (availableSlots.length === 0) {
 
                     timeSlotSelect.innerHTML =
@@ -96,6 +136,7 @@
 
                     return;
                 }
+
 
                 availableSlots.forEach(function(slot) {
 
@@ -121,9 +162,16 @@
 
         }
 
-        doctorSelect.addEventListener("change", loadTimeSlots);
 
-        dateInput.addEventListener("change", loadTimeSlots);
+        doctorSelect.addEventListener(
+            "change",
+            loadTimeSlots
+        );
+
+        dateInput.addEventListener(
+            "change",
+            loadTimeSlots
+        );
 
 
         // Book appointment
@@ -135,17 +183,22 @@
                 const doctorId = doctorSelect.value;
                 const timeSlotId = timeSlotSelect.value;
 
+
                 if (!timeSlotId) {
 
-                    alert("Please select an available time slot.");
+                    alert(
+                        "Please select an available time slot."
+                    );
 
                     return;
                 }
+
 
                 const selectedOption =
                     timeSlotSelect.options[
                         timeSlotSelect.selectedIndex
                     ];
+
 
                 const appointment = {
 
@@ -157,9 +210,11 @@
                             doctorSelect.selectedIndex
                         ].text.split(" - ")[0],
 
-                    doctor: doctorId,
+                    doctor:
+                        doctorId,
 
-                    timeSlot: timeSlotId,
+                    timeSlot:
+                        timeSlotId,
 
                     date:
                         dateInput.value,
@@ -175,19 +230,23 @@
 
                 try {
 
-                    const response = await fetch("/appointments", {
+                    const response = await fetch(
+                        "/appointments",
+                        {
+                            method: "POST",
 
-                        method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
 
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                            body: JSON.stringify(appointment)
+                        }
+                    );
 
-                        body: JSON.stringify(appointment)
 
-                    });
+                    const data =
+                        await response.json();
 
-                    const data = await response.json();
 
                     alert(
                         data.message +
@@ -195,15 +254,18 @@
                         (data.error || "")
                     );
 
+
                     if (response.ok) {
 
-                        document.getElementById("appointmentForm")
-                            .reset();
+                        document.getElementById(
+                            "appointmentForm"
+                        ).reset();
 
                         timeSlotSelect.innerHTML =
-                            '<option value="">Select Date First</option>';
+                            '<option value="">Select Doctor and Date</option>';
 
                     }
+
 
                 } catch (error) {
 
@@ -214,6 +276,10 @@
                 }
 
             });
+
+
+        // Load doctors when page opens
+        loadDoctors();
 
     </script>
 

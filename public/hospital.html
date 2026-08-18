@@ -23,38 +23,73 @@
             const city = document.getElementById("city").value.trim();
             const area = document.getElementById("area").value.trim();
 
-            const params = new URLSearchParams();
+            let url = "/hospitals";
 
-            if (city) {
-                params.append("city", city);
+            if (city || area) {
+
+                const params = new URLSearchParams();
+
+                if (city) {
+                    params.append("city", city);
+                }
+
+                if (area) {
+                    params.append("area", area);
+                }
+
+                url = "/hospitals/search?" + params.toString();
             }
-
-            if (area) {
-                params.append("area", area);
-            }
-
-            const url = "/hospitals/search?" + params.toString();
 
             try {
 
+                // Get hospitals
                 const response = await fetch(url);
 
+                if (!response.ok) {
+                    throw new Error("Failed to fetch hospitals");
+                }
+
                 const hospitals = await response.json();
+
+                // Get areas
+                const areaResponse = await fetch("/areas");
+
+                if (!areaResponse.ok) {
+                    throw new Error("Failed to fetch areas");
+                }
+
+                const areas = await areaResponse.json();
+
+                // Convert Area ID to Area Name
+                hospitals.forEach(function(hospital) {
+
+                    const areaData = areas.find(function(item) {
+                        return item._id === hospital.area;
+                    });
+
+                    if (areaData) {
+                        hospital.area = areaData.name;
+                    }
+
+                });
 
                 const list = document.getElementById("hospitalList");
 
                 if (hospitals.length === 0) {
+
                     list.innerHTML = "<p>No hospitals found.</p>";
+
                     return;
                 }
 
                 list.innerHTML = hospitals.map(hospital => `
                     <div>
+
                         <h2>${hospital.name}</h2>
 
                         <p>
                             <strong>Area:</strong>
-                            ${hospital.area}
+                            ${hospital.area || "N/A"}
                         </p>
 
                         <p>
@@ -71,6 +106,7 @@
                             <strong>Phone:</strong>
                             ${hospital.phone}
                         </p>
+
                     </div>
 
                     <hr>
@@ -84,6 +120,10 @@
                     "<p>Failed to load hospitals.</p>";
             }
         }
+
+        // Page open ayinappudu all hospitals load avutayi
+        searchHospitals();
+
     </script>
 
 </body>
